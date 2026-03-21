@@ -1,0 +1,14 @@
+{
+	"permissions": {
+		"allow": [
+			"Bash(pnpm install)",
+			"Bash(pnpm build)",
+			"Bash(pnpm test)",
+			"Bash(pnpm test:*)",
+			"Bash(pnpm check)",
+			"Bash(pnpm check:fix)",
+			"Bash(npx tsc*)",
+			"Bash(cd /Users/jladd/Code/viewscape-core*)"
+		]
+	}
+}

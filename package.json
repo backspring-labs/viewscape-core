@@ -1,0 +1,73 @@
+{
+	"name": "viewscape-core",
+	"version": "0.1.0",
+	"description": "Canonical headless model for a business architecture navigator",
+	"type": "module",
+	"license": "MIT",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		},
+		"./entities": {
+			"import": "./dist/entities/index.js",
+			"types": "./dist/entities/index.d.ts"
+		},
+		"./graph": {
+			"import": "./dist/graph/index.js",
+			"types": "./dist/graph/index.d.ts"
+		},
+		"./machines": {
+			"import": "./dist/machines/index.js",
+			"types": "./dist/machines/index.d.ts"
+		},
+		"./context": {
+			"import": "./dist/context/index.js",
+			"types": "./dist/context/index.d.ts"
+		},
+		"./perspective": {
+			"import": "./dist/perspective/index.js",
+			"types": "./dist/perspective/index.d.ts"
+		},
+		"./adapters": {
+			"import": "./dist/adapters/index.js",
+			"types": "./dist/adapters/index.d.ts"
+		},
+		"./indexing": {
+			"import": "./dist/indexing/index.js",
+			"types": "./dist/indexing/index.d.ts"
+		},
+		"./provenance": {
+			"import": "./dist/provenance/index.js",
+			"types": "./dist/provenance/index.d.ts"
+		},
+		"./test-fixtures": {
+			"import": "./dist/test-fixtures/index.js",
+			"types": "./dist/test-fixtures/index.d.ts"
+		}
+	},
+	"files": ["dist"],
+	"scripts": {
+		"build": "tsc -p tsconfig.build.json",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"check": "biome check .",
+		"check:fix": "biome check --fix .",
+		"precommit": "pnpm check && pnpm build && pnpm test"
+	},
+	"dependencies": {
+		"xstate": "^5.19.0",
+		"zod": "^3.24.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^1.9.0",
+		"lefthook": "^1.11.0",
+		"typescript": "^5.7.0",
+		"vitest": "^3.1.0"
+	},
+	"engines": {
+		"node": ">=20"
+	}
+}
