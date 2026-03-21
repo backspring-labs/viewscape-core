@@ -102,9 +102,9 @@ describe("reconcilePerspectiveSwitch", () => {
 			activeFocusTargets: [{ type: "node" as const, targetId: "n-identity-svc" }],
 		};
 		const result = reconcilePerspectiveSwitch(ctx, "persp-architecture", graph);
-		// n-identity-svc has persp-architecture layout at { x: 500, y: 100 }
-		expect(result.viewportAnchor.x).toBe(500);
-		expect(result.viewportAnchor.y).toBe(100);
+		// n-identity-svc has persp-architecture layout at { x: 950, y: 0 }
+		expect(result.viewportAnchor.x).toBe(950);
+		expect(result.viewportAnchor.y).toBe(0);
 	});
 
 	it("uses selectedNodeId if no focus targets", () => {
@@ -113,8 +113,8 @@ describe("reconcilePerspectiveSwitch", () => {
 			selectedNodeId: "n-core-ledger",
 		};
 		const result = reconcilePerspectiveSwitch(ctx, "persp-architecture", graph);
-		// n-core-ledger has persp-architecture layout at { x: 800, y: 250 }
-		expect(result.viewportAnchor.x).toBe(800);
+		// n-core-ledger has persp-architecture layout at { x: 1300, y: 250 }
+		expect(result.viewportAnchor.x).toBe(1300);
 		expect(result.viewportAnchor.y).toBe(250);
 	});
 });
@@ -153,9 +153,9 @@ describe("reconcileJourneySelection", () => {
 
 	it("updates viewport to first step's primary node", () => {
 		const result = reconcileJourneySelection(baseCtx(), journey, journeySteps, capabilities, graph);
-		// First step focuses on n-customer, which has persp-overview layout at { x: 100, y: 50 }
-		expect(result.viewportAnchor.x).toBe(100);
-		expect(result.viewportAnchor.y).toBe(50);
+		// First step focuses on n-customer, which has persp-overview layout at { x: 0, y: 200 }
+		expect(result.viewportAnchor.x).toBe(0);
+		expect(result.viewportAnchor.y).toBe(200);
 	});
 });
 
@@ -214,10 +214,10 @@ describe("reconcileStepChange", () => {
 			activeJourneyId: "j-open-savings",
 			activeStepIndex: 0,
 		};
-		// Step 2 focuses on n-identity-svc (persp-overview: { x: 550, y: 100 })
+		// Step 2 focuses on n-identity-svc (persp-overview: { x: 950, y: 0 })
 		const result = reconcileStepChange(ctx, 2, journeySteps, graph);
-		expect(result.viewportAnchor.x).toBe(550);
-		expect(result.viewportAnchor.y).toBe(100);
+		expect(result.viewportAnchor.x).toBe(950);
+		expect(result.viewportAnchor.y).toBe(0);
 	});
 
 	it("returns unchanged context for invalid step index", () => {

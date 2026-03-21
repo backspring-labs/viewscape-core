@@ -1,13 +1,24 @@
+import { AnnotationSchema } from "../entities/annotation.js";
 import type { Annotation } from "../entities/annotation.js";
+import { CapabilitySchema } from "../entities/capability.js";
 import type { Capability } from "../entities/capability.js";
+import { DomainSchema } from "../entities/domain.js";
 import type { Domain } from "../entities/domain.js";
+import { EdgeSchema } from "../entities/edge.js";
 import type { Edge } from "../entities/edge.js";
+import { EvidenceRefSchema } from "../entities/evidence-ref.js";
 import type { EvidenceRef } from "../entities/evidence-ref.js";
+import { JourneySchema } from "../entities/journey.js";
 import type { Journey } from "../entities/journey.js";
+import { LayerSchema } from "../entities/layer.js";
 import type { Layer } from "../entities/layer.js";
+import { NodeSchema } from "../entities/node.js";
 import type { Node } from "../entities/node.js";
+import { PerspectiveSchema } from "../entities/perspective.js";
 import type { Perspective } from "../entities/perspective.js";
+import { SceneSchema } from "../entities/scene.js";
 import type { Scene } from "../entities/scene.js";
+import { StepSchema } from "../entities/step.js";
 import type { Step } from "../entities/step.js";
 
 // --- Domains ---
@@ -31,7 +42,7 @@ export const domains: Domain[] = [
 		description: "Payment processing and money movement",
 		tags: ["core"],
 	},
-];
+].map((d) => DomainSchema.parse(d));
 
 // --- Capabilities ---
 
@@ -96,7 +107,7 @@ export const capabilities: Capability[] = [
 		journeyIds: [],
 		tags: ["payments", "processing"],
 	},
-];
+].map((d) => CapabilitySchema.parse(d));
 
 // --- Nodes ---
 
@@ -108,11 +119,11 @@ export const nodes: Node[] = [
 		description: "Retail banking customer",
 		tags: ["external"],
 		layoutByPerspective: {
-			"persp-overview": { x: 100, y: 50 },
-			"persp-architecture": { x: 50, y: 50 },
-			"persp-process": { x: 50, y: 100 },
-			"persp-journey": { x: 50, y: 100 },
-			"persp-provider": { x: 100, y: 50 },
+			"persp-overview": { x: 0, y: 200 },
+			"persp-architecture": { x: 0, y: 200 },
+			"persp-process": { x: 0, y: 0 },
+			"persp-journey": { x: 0, y: 0 },
+			"persp-provider": { x: 0, y: 200 },
 		},
 	},
 	{
@@ -122,11 +133,11 @@ export const nodes: Node[] = [
 		description: "Customer-facing mobile application",
 		tags: ["channel", "mobile"],
 		layoutByPerspective: {
-			"persp-overview": { x: 250, y: 50 },
-			"persp-architecture": { x: 200, y: 50 },
-			"persp-process": { x: 200, y: 100 },
-			"persp-journey": { x: 200, y: 100 },
-			"persp-provider": { x: 250, y: 50 },
+			"persp-overview": { x: 300, y: 200 },
+			"persp-architecture": { x: 300, y: 200 },
+			"persp-process": { x: 300, y: 0 },
+			"persp-journey": { x: 300, y: 0 },
+			"persp-provider": { x: 300, y: 200 },
 		},
 	},
 	{
@@ -136,11 +147,11 @@ export const nodes: Node[] = [
 		description: "Central API gateway and routing layer",
 		tags: ["infrastructure", "orchestration"],
 		layoutByPerspective: {
-			"persp-overview": { x: 400, y: 50 },
-			"persp-architecture": { x: 350, y: 150 },
-			"persp-process": { x: 350, y: 200 },
-			"persp-journey": { x: 350, y: 200 },
-			"persp-provider": { x: 400, y: 150 },
+			"persp-overview": { x: 600, y: 200 },
+			"persp-architecture": { x: 600, y: 200 },
+			"persp-process": { x: 600, y: 0 },
+			"persp-journey": { x: 600, y: 0 },
+			"persp-provider": { x: 600, y: 200 },
 		},
 	},
 	{
@@ -150,11 +161,11 @@ export const nodes: Node[] = [
 		description: "Identity verification and KYC processing",
 		tags: ["identity", "kyc", "security"],
 		layoutByPerspective: {
-			"persp-overview": { x: 550, y: 100 },
-			"persp-architecture": { x: 500, y: 100 },
-			"persp-process": { x: 500, y: 300 },
-			"persp-journey": { x: 500, y: 300 },
-			"persp-provider": { x: 550, y: 100 },
+			"persp-overview": { x: 950, y: 0 },
+			"persp-architecture": { x: 950, y: 0 },
+			"persp-process": { x: 0, y: 150 },
+			"persp-journey": { x: 0, y: 150 },
+			"persp-provider": { x: 950, y: 0 },
 		},
 	},
 	{
@@ -164,11 +175,11 @@ export const nodes: Node[] = [
 		description: "Fraud detection, risk scoring, and policy evaluation",
 		tags: ["risk", "fraud", "decisioning"],
 		layoutByPerspective: {
-			"persp-overview": { x: 550, y: 200 },
-			"persp-architecture": { x: 500, y: 200 },
-			"persp-process": { x: 500, y: 400 },
-			"persp-journey": { x: 500, y: 400 },
-			"persp-provider": { x: 550, y: 200 },
+			"persp-overview": { x: 950, y: 150 },
+			"persp-architecture": { x: 950, y: 150 },
+			"persp-process": { x: 300, y: 150 },
+			"persp-journey": { x: 300, y: 150 },
+			"persp-provider": { x: 950, y: 150 },
 		},
 	},
 	{
@@ -178,11 +189,11 @@ export const nodes: Node[] = [
 		description: "Account lifecycle management",
 		tags: ["accounts", "core"],
 		layoutByPerspective: {
-			"persp-overview": { x: 700, y: 150 },
-			"persp-architecture": { x: 650, y: 150 },
-			"persp-process": { x: 650, y: 500 },
-			"persp-journey": { x: 650, y: 500 },
-			"persp-provider": { x: 700, y: 150 },
+			"persp-overview": { x: 950, y: 300 },
+			"persp-architecture": { x: 950, y: 300 },
+			"persp-process": { x: 600, y: 150 },
+			"persp-journey": { x: 600, y: 150 },
+			"persp-provider": { x: 950, y: 300 },
 		},
 	},
 	{
@@ -192,11 +203,11 @@ export const nodes: Node[] = [
 		description: "Double-entry ledger and system of record",
 		tags: ["core", "ledger", "system-of-record"],
 		layoutByPerspective: {
-			"persp-overview": { x: 850, y: 150 },
-			"persp-architecture": { x: 800, y: 250 },
-			"persp-process": { x: 800, y: 600 },
-			"persp-journey": { x: 800, y: 600 },
-			"persp-provider": { x: 850, y: 250 },
+			"persp-overview": { x: 1300, y: 250 },
+			"persp-architecture": { x: 1300, y: 250 },
+			"persp-process": { x: 900, y: 100 },
+			"persp-journey": { x: 900, y: 100 },
+			"persp-provider": { x: 1300, y: 250 },
 		},
 	},
 	{
@@ -206,11 +217,11 @@ export const nodes: Node[] = [
 		description: "Customer notifications and alerts",
 		tags: ["notifications", "messaging"],
 		layoutByPerspective: {
-			"persp-overview": { x: 850, y: 50 },
-			"persp-architecture": { x: 800, y: 50 },
-			"persp-process": { x: 800, y: 700 },
-			"persp-journey": { x: 800, y: 700 },
-			"persp-provider": { x: 850, y: 50 },
+			"persp-overview": { x: 1300, y: 400 },
+			"persp-architecture": { x: 1300, y: 400 },
+			"persp-process": { x: 900, y: 250 },
+			"persp-journey": { x: 900, y: 250 },
+			"persp-provider": { x: 1300, y: 400 },
 		},
 	},
 	{
@@ -220,10 +231,10 @@ export const nodes: Node[] = [
 		description: "Payment routing and orchestration",
 		tags: ["payments", "orchestration"],
 		layoutByPerspective: {
-			"persp-overview": { x: 400, y: 300 },
-			"persp-architecture": { x: 350, y: 350 },
-			"persp-process": { x: 350, y: 300 },
-			"persp-provider": { x: 400, y: 300 },
+			"persp-overview": { x: 950, y: 450 },
+			"persp-architecture": { x: 950, y: 450 },
+			"persp-process": { x: 300, y: 300 },
+			"persp-provider": { x: 950, y: 450 },
 		},
 	},
 	{
@@ -233,13 +244,13 @@ export const nodes: Node[] = [
 		description: "External payment network interface (ACH, RTP, FedNow)",
 		tags: ["payments", "rails", "external"],
 		layoutByPerspective: {
-			"persp-overview": { x: 550, y: 350 },
-			"persp-architecture": { x: 500, y: 400 },
-			"persp-process": { x: 500, y: 350 },
-			"persp-provider": { x: 550, y: 350 },
+			"persp-overview": { x: 1300, y: 500 },
+			"persp-architecture": { x: 1300, y: 500 },
+			"persp-process": { x: 600, y: 300 },
+			"persp-provider": { x: 1300, y: 500 },
 		},
 	},
-];
+].map((d) => NodeSchema.parse(d));
 
 // --- Edges ---
 
@@ -321,7 +332,7 @@ export const edges: Edge[] = [
 		type: "ledger_posting",
 		label: "post entries",
 	},
-];
+].map((d) => EdgeSchema.parse(d));
 
 // --- Journey ---
 
@@ -423,7 +434,7 @@ export const steps: Step[] = [
 		nextStepIds: [],
 		sceneId: "sc-6",
 	},
-];
+].map((d) => StepSchema.parse(d));
 
 export const journeys: Journey[] = [
 	{
@@ -435,7 +446,7 @@ export const journeys: Journey[] = [
 		stepIds: ["s-1", "s-2", "s-3", "s-4", "s-5", "s-6"],
 		tags: ["savings", "origination", "golden-path"],
 	},
-];
+].map((d) => JourneySchema.parse(d));
 
 // --- Perspectives ---
 
@@ -475,7 +486,7 @@ export const perspectives: Perspective[] = [
 		description: "User journey step-by-step traversal",
 		defaultLayerId: "layer-journey",
 	},
-];
+].map((d) => PerspectiveSchema.parse(d));
 
 // --- Layers ---
 
@@ -501,7 +512,7 @@ export const layers: Layer[] = [
 		eligibleEdgeTypes: ["user_interaction", "api_call", "service_call", "ledger_posting", "event"],
 		layoutStrategy: "manual",
 	},
-];
+].map((d) => LayerSchema.parse(d));
 
 // --- Scenes ---
 
@@ -549,7 +560,7 @@ export const scenes: Scene[] = [
 		focusTargets: ["n-notification-svc", "n-mobile-app"],
 		instructionalCopy: "Customer sees the confirmation screen and receives a welcome notification.",
 	},
-];
+].map((d) => SceneSchema.parse(d));
 
 // --- Annotations ---
 
@@ -584,7 +595,7 @@ export const annotations: Annotation[] = [
 		author: "system",
 		createdAt: "2026-01-15T10:00:00Z",
 	},
-];
+].map((d) => AnnotationSchema.parse(d));
 
 // --- Evidence Refs ---
 
@@ -606,4 +617,4 @@ export const evidenceRefs: EvidenceRef[] = [
 		accessClassification: "internal",
 		relatedEntityIds: ["n-account-svc", "n-core-ledger", "cap-account-opening"],
 	},
-];
+].map((d) => EvidenceRefSchema.parse(d));

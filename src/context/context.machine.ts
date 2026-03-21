@@ -43,6 +43,7 @@ export type ContextMachineEvent =
 	| { type: "SWITCH_PERSPECTIVE"; perspectiveId: string }
 	| { type: "SELECT_NODE"; nodeId: string }
 	| { type: "SELECT_EDGE"; edgeId: string }
+	| { type: "CLEAR_SELECTION" }
 	| { type: "SWITCH_MODE"; mode: "viewscape" | "guiderail" };
 
 function resolveStepsForJourney(journeyId: string, allSteps: Step[]): Step[] {
@@ -252,6 +253,15 @@ export const contextMachine = setup({
 							...context.nav,
 							selectedEdgeId: event.edgeId,
 							selectedNodeId: null,
+						},
+					})),
+				},
+				CLEAR_SELECTION: {
+					actions: assign(({ context }) => ({
+						nav: {
+							...context.nav,
+							selectedNodeId: null,
+							selectedEdgeId: null,
 						},
 					})),
 				},
