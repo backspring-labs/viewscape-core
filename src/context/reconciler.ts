@@ -1,7 +1,12 @@
 import type { Capability } from "../entities/capability.js";
 import type { FocusTarget } from "../entities/focus-target.js";
 import type { Journey } from "../entities/journey.js";
+import type { ProcessStage } from "../entities/process-stage.js";
+import type { Process } from "../entities/process.js";
 import type { Step } from "../entities/step.js";
+import type { StoryRoute } from "../entities/story-route.js";
+import type { StoryWaypoint } from "../entities/story-waypoint.js";
+import type { ValueStream } from "../entities/value-stream.js";
 import type { TerrainGraph } from "../graph/graph.js";
 import type { NavigationContext } from "./navigation-context.js";
 
@@ -222,5 +227,157 @@ export function reconcileModeSwitch(
 	return {
 		...ctx,
 		mode,
+	};
+}
+
+/**
+ * 9. Value stream switch: set value stream, clear process.
+ * Preserve activeCapabilityId only if it belongs to the selected value stream's capabilityIds.
+ */
+export function reconcileValueStreamSwitch(
+	ctx: NavigationContext,
+	valueStreamId: string,
+	valueStream: ValueStream,
+): NavigationContext {
+	const capabilityPreserved =
+		ctx.activeCapabilityId && valueStream.capabilityIds.includes(ctx.activeCapabilityId);
+
+	return {
+		...ctx,
+		activeValueStreamId: valueStreamId,
+		activeProcessId: null,
+		activeCapabilityId: capabilityPreserved ? ctx.activeCapabilityId : null,
+		activeJourneyId: capabilityPreserved ? ctx.activeJourneyId : null,
+		activeStepIndex: capabilityPreserved ? ctx.activeStepIndex : null,
+	};
+}
+
+/**
+ * 10. Process switch: set process, update focus to first stage's nodes (v1 simplification).
+ */
+export function reconcileProcessSwitch(
+	ctx: NavigationContext,
+	processId: string,
+	processStages: ProcessStage[],
+	graph: TerrainGraph,
+): NavigationContext {
+	const orderedStages = [...processStages].sort((a, b) => a.sequenceNumber - b.sequenceNumber);
+	const firstStage = orderedStages[0];
+
+	const focusTargets: FocusTarget[] =
+		firstStage?.nodeIds.map((nodeId) => ({ type: "node" as const, targetId: nodeId })) ?? [];
+
+	const primaryNode = primaryNodeFromFocusTargets(focusTargets);
+	const viewportAnchor = primaryNode
+		? viewportForNode(primaryNode, ctx.activePerspectiveId, graph, ctx.viewportAnchor.zoom)
+		: ctx.viewportAnchor;
+
+	return {
+		...ctx,
+		activeProcessId: processId,
+		activeFocusTargets: focusTargets,
+		viewportAnchor,
+	};
+}
+
+/**
+ * 11. Story route start: set route, load first waypoint, set routeState active.
+ * Does NOT clear domain/capability — route is an overlay on the terrain.
+ */
+export function reconcileStoryRouteStart(
+	ctx: NavigationContext,
+	storyRoute: StoryRoute,
+	waypoints: StoryWaypoint[],
+	graph: TerrainGraph,
+): NavigationContext {
+	const orderedWaypoints = [...waypoints].sort((a, b) => a.sequenceNumber - b.sequenceNumber);
+	const firstWaypoint = orderedWaypoints[0];
+
+	const focusTargets = firstWaypoint?.focusTargets ?? [];
+	const primaryNode = primaryNodeFromFocusTargets(focusTargets);
+
+	const perspectiveId = firstWaypoint?.perspectiveId ?? ctx.activePerspectiveId;
+	const viewportAnchor = primaryNode
+		? viewportForNode(primaryNode, perspectiveId, graph, ctx.viewportAnchor.zoom)
+		: ctx.viewportAnchor;
+
+	return {
+		...ctx,
+		activeStoryRouteId: storyRoute.id,
+		activeWaypointIndex: 0,
+		routeState: "active",
+		activeFocusTargets: focusTargets,
+		activePerspectiveId: perspectiveId,
+		viewportAnchor,
+	};
+}
+
+/**
+ * 12. Waypoint change: update focus targets, perspective (if specified), viewport.
+ */
+export function reconcileWaypointChange(
+	ctx: NavigationContext,
+	waypointIndex: number,
+	waypoints: StoryWaypoint[],
+	graph: TerrainGraph,
+): NavigationContext {
+	const waypoint = waypoints.find((w) => w.sequenceNumber === waypointIndex);
+	if (!waypoint) return ctx;
+
+	const focusTargets = waypoint.focusTargets;
+	const perspectiveId = waypoint.perspectiveId ?? ctx.activePerspectiveId;
+	const primaryNode = primaryNodeFromFocusTargets(focusTargets);
+	const viewportAnchor = primaryNode
+		? viewportForNode(primaryNode, perspectiveId, graph, ctx.viewportAnchor.zoom)
+		: ctx.viewportAnchor;
+
+	return {
+		...ctx,
+		activeWaypointIndex: waypointIndex,
+		activeFocusTargets: focusTargets,
+		activePerspectiveId: perspectiveId,
+		viewportAnchor,
+	};
+}
+
+/**
+ * 13. Route pause: set routeState to paused.
+ * Snapshot is saved by Context Machine, not reconciler.
+ * Temporary exploration during pause does not mutate the route-owned focus snapshot.
+ */
+export function reconcileRoutePause(ctx: NavigationContext): NavigationContext {
+	return {
+		...ctx,
+		routeState: "paused",
+	};
+}
+
+/**
+ * 14. Route resume: restore focus/perspective/viewport from saved snapshot.
+ */
+export function reconcileRouteResume(
+	ctx: NavigationContext,
+	savedSnapshot: NavigationContext,
+): NavigationContext {
+	return {
+		...ctx,
+		activeFocusTargets: savedSnapshot.activeFocusTargets,
+		activePerspectiveId: savedSnapshot.activePerspectiveId,
+		viewportAnchor: savedSnapshot.viewportAnchor,
+		activeWaypointIndex: savedSnapshot.activeWaypointIndex,
+		routeState: "active",
+	};
+}
+
+/**
+ * 15. Route end: clear route state, preserve domain/capability/perspective.
+ */
+export function reconcileRouteEnd(ctx: NavigationContext): NavigationContext {
+	return {
+		...ctx,
+		activeStoryRouteId: null,
+		activeWaypointIndex: null,
+		routeState: "inactive",
+		activeFocusTargets: [],
 	};
 }

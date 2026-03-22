@@ -1,5 +1,6 @@
 export {
 	NavigationContextSchema,
+	RouteStateSchema,
 	createInitialNavigationContext,
 } from "./navigation-context.js";
 export type { NavigationContext } from "./navigation-context.js";
@@ -13,6 +14,13 @@ export {
 	reconcileNodeSelection,
 	reconcilePerspectiveSwitch,
 	reconcileStepChange,
+	reconcileValueStreamSwitch,
+	reconcileProcessSwitch,
+	reconcileStoryRouteStart,
+	reconcileWaypointChange,
+	reconcileRoutePause,
+	reconcileRouteResume,
+	reconcileRouteEnd,
 } from "./reconciler.js";
 
 export { contextMachine } from "./context.machine.js";

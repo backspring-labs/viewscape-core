@@ -10,11 +10,18 @@ import {
 	LayerSchema,
 	NodeSchema,
 	PerspectiveSchema,
+	ProcessSchema,
+	ProcessStageSchema,
+	ProviderAssociationSchema,
+	ProviderSchema,
 	SceneSchema,
 	SessionSchema,
 	SourceSchema,
 	StepSchema,
+	StoryRouteSchema,
+	StoryWaypointSchema,
 	TerrainIndexSchema,
+	ValueStreamSchema,
 	WorkspaceSchema,
 } from "../../src/entities/index.js";
 import { ProvenanceRefSchema } from "../../src/provenance/index.js";
@@ -28,8 +35,15 @@ import {
 	layers,
 	nodes,
 	perspectives,
+	processStages,
+	processes,
+	providerAssociations,
+	providers,
 	scenes,
 	steps,
+	storyRoutes,
+	storyWaypoints,
+	valueStreams,
 } from "../../src/test-fixtures/index.js";
 
 describe("Entity schemas validate seed data", () => {
@@ -284,6 +298,136 @@ describe("Domain → Capability → Journey hierarchy", () => {
 				if (ft.type === "edge") {
 					expect(edgeIds.has(ft.targetId)).toBe(true);
 				}
+			}
+		}
+	});
+});
+
+describe("0.2.0 entity schemas validate seed data", () => {
+	it("validates all providers", () => {
+		expect(providers.length).toBe(5);
+		for (const p of providers) {
+			expect(ProviderSchema.parse(p)).toBeDefined();
+		}
+	});
+
+	it("validates all provider associations", () => {
+		expect(providerAssociations.length).toBeGreaterThanOrEqual(6);
+		for (const pa of providerAssociations) {
+			expect(ProviderAssociationSchema.parse(pa)).toBeDefined();
+		}
+	});
+
+	it("validates all value streams", () => {
+		expect(valueStreams.length).toBe(2);
+		for (const vs of valueStreams) {
+			expect(ValueStreamSchema.parse(vs)).toBeDefined();
+		}
+	});
+
+	it("validates all processes", () => {
+		expect(processes.length).toBe(1);
+		for (const p of processes) {
+			expect(ProcessSchema.parse(p)).toBeDefined();
+		}
+	});
+
+	it("validates all process stages", () => {
+		expect(processStages.length).toBe(4);
+		for (const ps of processStages) {
+			expect(ProcessStageSchema.parse(ps)).toBeDefined();
+		}
+	});
+
+	it("validates all story routes", () => {
+		expect(storyRoutes.length).toBe(1);
+		for (const sr of storyRoutes) {
+			expect(StoryRouteSchema.parse(sr)).toBeDefined();
+		}
+	});
+
+	it("validates all story waypoints", () => {
+		expect(storyWaypoints.length).toBe(5);
+		for (const sw of storyWaypoints) {
+			expect(StoryWaypointSchema.parse(sw)).toBeDefined();
+		}
+	});
+
+	it("FocusTargetType accepts new values", () => {
+		expect(() => FocusTargetSchema.parse({ type: "provider", targetId: "prov-1" })).not.toThrow();
+		expect(() =>
+			FocusTargetSchema.parse({ type: "process_stage", targetId: "ps-1" }),
+		).not.toThrow();
+		expect(() => FocusTargetSchema.parse({ type: "value_stream", targetId: "vs-1" })).not.toThrow();
+	});
+
+	it("FocusTargetType still accepts original values", () => {
+		expect(() => FocusTargetSchema.parse({ type: "node", targetId: "n-1" })).not.toThrow();
+		expect(() => FocusTargetSchema.parse({ type: "edge", targetId: "e-1" })).not.toThrow();
+	});
+});
+
+describe("0.2.0 referential integrity", () => {
+	it("provider associations reference valid providers", () => {
+		const providerIds = new Set(providers.map((p) => p.id));
+		for (const pa of providerAssociations) {
+			expect(providerIds.has(pa.providerId)).toBe(true);
+		}
+	});
+
+	it("value streams reference valid domains", () => {
+		const domainIds = new Set(domains.map((d) => d.id));
+		for (const vs of valueStreams) {
+			expect(domainIds.has(vs.domainId)).toBe(true);
+		}
+	});
+
+	it("value stream capabilityIds reference valid capabilities", () => {
+		const capIds = new Set(capabilities.map((c) => c.id));
+		for (const vs of valueStreams) {
+			for (const capId of vs.capabilityIds) {
+				expect(capIds.has(capId)).toBe(true);
+			}
+		}
+	});
+
+	it("process stageIds reference valid process stages", () => {
+		const stageIds = new Set(processStages.map((ps) => ps.id));
+		for (const proc of processes) {
+			for (const stageId of proc.stageIds) {
+				expect(stageIds.has(stageId)).toBe(true);
+			}
+		}
+	});
+
+	it("process stages reference valid processes", () => {
+		const processIds = new Set(processes.map((p) => p.id));
+		for (const ps of processStages) {
+			expect(processIds.has(ps.processId)).toBe(true);
+		}
+	});
+
+	it("story route waypointIds reference valid waypoints", () => {
+		const waypointIds = new Set(storyWaypoints.map((sw) => sw.id));
+		for (const sr of storyRoutes) {
+			for (const wpId of sr.waypointIds) {
+				expect(waypointIds.has(wpId)).toBe(true);
+			}
+		}
+	});
+
+	it("story waypoints reference valid story routes", () => {
+		const routeIds = new Set(storyRoutes.map((sr) => sr.id));
+		for (const sw of storyWaypoints) {
+			expect(routeIds.has(sw.storyRouteId)).toBe(true);
+		}
+	});
+
+	it("process references valid capabilities", () => {
+		const capIds = new Set(capabilities.map((c) => c.id));
+		for (const proc of processes) {
+			for (const capId of proc.capabilityIds) {
+				expect(capIds.has(capId)).toBe(true);
 			}
 		}
 	});

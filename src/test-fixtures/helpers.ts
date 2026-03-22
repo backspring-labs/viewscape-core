@@ -7,8 +7,15 @@ import type { Journey } from "../entities/journey.js";
 import type { Layer } from "../entities/layer.js";
 import type { Node } from "../entities/node.js";
 import type { Perspective } from "../entities/perspective.js";
+import type { ProcessStage } from "../entities/process-stage.js";
+import type { Process } from "../entities/process.js";
+import type { ProviderAssociation } from "../entities/provider-association.js";
+import type { Provider } from "../entities/provider.js";
 import type { Scene } from "../entities/scene.js";
 import type { Step } from "../entities/step.js";
+import type { StoryRoute } from "../entities/story-route.js";
+import type { StoryWaypoint } from "../entities/story-waypoint.js";
+import type { ValueStream } from "../entities/value-stream.js";
 
 let counter = 0;
 function nextId(prefix: string): string {
@@ -151,6 +158,97 @@ export function makeEvidenceRef(overrides: Partial<EvidenceRef> = {}): EvidenceR
 		type: "document",
 		accessClassification: "internal",
 		relatedEntityIds: [],
+		...overrides,
+	};
+}
+
+export function makeProvider(overrides: Partial<Provider> = {}): Provider {
+	return {
+		id: nextId("prov"),
+		label: "Test Provider",
+		category: "specialist",
+		tags: [],
+		metadata: {},
+		...overrides,
+	};
+}
+
+export function makeProviderAssociation(
+	overrides: Partial<ProviderAssociation> = {},
+): ProviderAssociation {
+	return {
+		id: nextId("pa"),
+		providerId: "prov-test",
+		targetType: "capability",
+		targetId: "cap-test",
+		role: "participant",
+		metadata: {},
+		...overrides,
+	};
+}
+
+export function makeValueStream(overrides: Partial<ValueStream> = {}): ValueStream {
+	return {
+		id: nextId("vs"),
+		domainId: "dom-test",
+		label: "Test Value Stream",
+		capabilityIds: [],
+		journeyIds: [],
+		tags: [],
+		metadata: {},
+		...overrides,
+	};
+}
+
+export function makeProcess(overrides: Partial<Process> = {}): Process {
+	return {
+		id: nextId("proc"),
+		label: "Test Process",
+		capabilityIds: [],
+		stageIds: [],
+		tags: [],
+		metadata: {},
+		...overrides,
+	};
+}
+
+export function makeProcessStage(overrides: Partial<ProcessStage> = {}): ProcessStage {
+	return {
+		id: nextId("ps"),
+		processId: "proc-test",
+		sequenceNumber: 0,
+		label: "Test Stage",
+		nodeIds: [],
+		edgeIds: [],
+		controlPoints: [],
+		metadata: {},
+		...overrides,
+	};
+}
+
+export function makeStoryRoute(overrides: Partial<StoryRoute> = {}): StoryRoute {
+	return {
+		id: nextId("sr"),
+		title: "Test Story Route",
+		destinationObjective: "Test objective",
+		overview: "Test overview",
+		waypointIds: [],
+		tags: [],
+		metadata: {},
+		...overrides,
+	};
+}
+
+export function makeStoryWaypoint(overrides: Partial<StoryWaypoint> = {}): StoryWaypoint {
+	return {
+		id: nextId("sw"),
+		storyRouteId: "sr-test",
+		sequenceNumber: 0,
+		title: "Test Waypoint",
+		keyMessage: "Test message",
+		focusTargets: [],
+		evidenceRefIds: [],
+		metadata: {},
 		...overrides,
 	};
 }

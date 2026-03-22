@@ -8,10 +8,27 @@ import {
 	reconcileModeSwitch,
 	reconcileNodeSelection,
 	reconcilePerspectiveSwitch,
+	reconcileProcessSwitch,
+	reconcileRouteEnd,
+	reconcileRoutePause,
+	reconcileRouteResume,
 	reconcileStepChange,
+	reconcileStoryRouteStart,
+	reconcileValueStreamSwitch,
+	reconcileWaypointChange,
 } from "../../src/context/reconciler.js";
 import { createGraph } from "../../src/graph/graph.js";
-import { capabilities, edges, journeys, nodes, steps } from "../../src/test-fixtures/index.js";
+import {
+	capabilities,
+	edges,
+	journeys,
+	nodes,
+	processStages,
+	steps,
+	storyRoutes,
+	storyWaypoints,
+	valueStreams,
+} from "../../src/test-fixtures/index.js";
 
 const graph = createGraph(nodes, edges);
 // biome-ignore lint/style/noNonNullAssertion: seed data is known to have at least one journey
@@ -277,5 +294,206 @@ describe("reconcileModeSwitch", () => {
 		expect(result.activeCapabilityId).toBe("cap-account-opening");
 		expect(result.activeJourneyId).toBe("j-open-savings");
 		expect(result.activeStepIndex).toBe(3);
+	});
+});
+
+// --- 0.2.0 reconciler additions ---
+
+// biome-ignore lint/style/noNonNullAssertion: seed data known
+const retailPayments = valueStreams.find((vs) => vs.id === "vs-retail-payments")!;
+// biome-ignore lint/style/noNonNullAssertion: seed data known
+const paymentAuthProcess = storyRoutes.find((sr) => sr.id === "sr-payment-flow")!;
+const paymentAuthStages = processStages.filter((ps) => ps.processId === "proc-payment-auth");
+const routeWaypoints = storyWaypoints.filter((sw) => sw.storyRouteId === "sr-payment-flow");
+// biome-ignore lint/style/noNonNullAssertion: seed data known
+const storyRoute = storyRoutes.find((sr) => sr.id === "sr-payment-flow")!;
+
+describe("reconcileValueStreamSwitch", () => {
+	it("sets value stream and clears process", () => {
+		const ctx = { ...baseCtx(), activeDomainId: "dom-payments", activeProcessId: "proc-1" };
+		const result = reconcileValueStreamSwitch(ctx, "vs-retail-payments", retailPayments);
+		expect(result.activeValueStreamId).toBe("vs-retail-payments");
+		expect(result.activeProcessId).toBeNull();
+	});
+
+	it("preserves capability if it belongs to the value stream", () => {
+		const ctx = {
+			...baseCtx(),
+			activeDomainId: "dom-payments",
+			activeCapabilityId: "cap-money-movement",
+		};
+		const result = reconcileValueStreamSwitch(ctx, "vs-retail-payments", retailPayments);
+		expect(result.activeCapabilityId).toBe("cap-money-movement");
+	});
+
+	it("clears capability if it does not belong to the value stream", () => {
+		const ctx = {
+			...baseCtx(),
+			activeDomainId: "dom-payments",
+			activeCapabilityId: "cap-auth",
+		};
+		const result = reconcileValueStreamSwitch(ctx, "vs-retail-payments", retailPayments);
+		expect(result.activeCapabilityId).toBeNull();
+	});
+
+	it("preserves domain and perspective", () => {
+		const ctx = {
+			...baseCtx(),
+			activeDomainId: "dom-payments",
+			activePerspectiveId: "persp-provider",
+		};
+		const result = reconcileValueStreamSwitch(ctx, "vs-retail-payments", retailPayments);
+		expect(result.activeDomainId).toBe("dom-payments");
+		expect(result.activePerspectiveId).toBe("persp-provider");
+	});
+});
+
+describe("reconcileProcessSwitch", () => {
+	it("sets process and updates focus to first stage nodes", () => {
+		const result = reconcileProcessSwitch(baseCtx(), "proc-payment-auth", paymentAuthStages, graph);
+		expect(result.activeProcessId).toBe("proc-payment-auth");
+		expect(result.activeFocusTargets.length).toBeGreaterThan(0);
+		expect(result.activeFocusTargets[0]?.type).toBe("node");
+	});
+
+	it("preserves domain/capability/perspective", () => {
+		const ctx = {
+			...baseCtx(),
+			activeDomainId: "dom-payments",
+			activeCapabilityId: "cap-payment-processing",
+			activePerspectiveId: "persp-process",
+		};
+		const result = reconcileProcessSwitch(ctx, "proc-payment-auth", paymentAuthStages, graph);
+		expect(result.activeDomainId).toBe("dom-payments");
+		expect(result.activeCapabilityId).toBe("cap-payment-processing");
+		expect(result.activePerspectiveId).toBe("persp-process");
+	});
+});
+
+describe("reconcileStoryRouteStart", () => {
+	it("sets route, first waypoint, and routeState active", () => {
+		const result = reconcileStoryRouteStart(baseCtx(), storyRoute, routeWaypoints, graph);
+		expect(result.activeStoryRouteId).toBe("sr-payment-flow");
+		expect(result.activeWaypointIndex).toBe(0);
+		expect(result.routeState).toBe("active");
+		expect(result.activeFocusTargets.length).toBeGreaterThan(0);
+	});
+
+	it("applies first waypoint perspective if present", () => {
+		const result = reconcileStoryRouteStart(baseCtx(), storyRoute, routeWaypoints, graph);
+		// First waypoint (sw-1) has perspectiveId: "persp-overview"
+		expect(result.activePerspectiveId).toBe("persp-overview");
+	});
+
+	it("does not clear domain/capability", () => {
+		const ctx = {
+			...baseCtx(),
+			activeDomainId: "dom-payments",
+			activeCapabilityId: "cap-payment-processing",
+		};
+		const result = reconcileStoryRouteStart(ctx, storyRoute, routeWaypoints, graph);
+		expect(result.activeDomainId).toBe("dom-payments");
+		expect(result.activeCapabilityId).toBe("cap-payment-processing");
+	});
+});
+
+describe("reconcileWaypointChange", () => {
+	it("updates focus targets for new waypoint", () => {
+		const ctx = {
+			...baseCtx(),
+			activeStoryRouteId: "sr-payment-flow",
+			activeWaypointIndex: 0,
+			routeState: "active" as const,
+		};
+		const result = reconcileWaypointChange(ctx, 1, routeWaypoints, graph);
+		expect(result.activeWaypointIndex).toBe(1);
+		expect(result.activeFocusTargets.length).toBeGreaterThan(0);
+	});
+
+	it("applies waypoint perspective if present", () => {
+		const ctx = { ...baseCtx(), routeState: "active" as const };
+		// Waypoint sw-2 (index 1) has perspectiveId: "persp-architecture"
+		const result = reconcileWaypointChange(ctx, 1, routeWaypoints, graph);
+		expect(result.activePerspectiveId).toBe("persp-architecture");
+	});
+
+	it("preserves current perspective if waypoint has no perspectiveId", () => {
+		const ctx = {
+			...baseCtx(),
+			activePerspectiveId: "persp-provider",
+			routeState: "active" as const,
+		};
+		// Waypoint sw-5 (index 4) has no perspectiveId
+		const result = reconcileWaypointChange(ctx, 4, routeWaypoints, graph);
+		expect(result.activePerspectiveId).toBe("persp-provider");
+	});
+
+	it("returns unchanged for invalid waypoint index", () => {
+		const ctx = { ...baseCtx(), routeState: "active" as const };
+		const result = reconcileWaypointChange(ctx, 99, routeWaypoints, graph);
+		expect(result).toEqual(ctx);
+	});
+});
+
+describe("reconcileRoutePause", () => {
+	it("sets routeState to paused", () => {
+		const ctx = {
+			...baseCtx(),
+			activeStoryRouteId: "sr-payment-flow",
+			activeWaypointIndex: 2,
+			routeState: "active" as const,
+		};
+		const result = reconcileRoutePause(ctx);
+		expect(result.routeState).toBe("paused");
+		expect(result.activeStoryRouteId).toBe("sr-payment-flow");
+		expect(result.activeWaypointIndex).toBe(2);
+	});
+});
+
+describe("reconcileRouteResume", () => {
+	it("restores focus/perspective/viewport from saved snapshot", () => {
+		const savedSnapshot = {
+			...baseCtx(),
+			activeFocusTargets: [{ type: "node" as const, targetId: "n-risk-svc" }],
+			activePerspectiveId: "persp-architecture",
+			viewportAnchor: { x: 500, y: 200, zoom: 1.5 },
+			activeWaypointIndex: 2,
+		};
+		const currentCtx = {
+			...baseCtx(),
+			routeState: "paused" as const,
+			activeStoryRouteId: "sr-payment-flow",
+			selectedNodeId: "n-customer",
+			activePerspectiveId: "persp-overview",
+		};
+		const result = reconcileRouteResume(currentCtx, savedSnapshot);
+		expect(result.routeState).toBe("active");
+		expect(result.activeFocusTargets).toEqual(savedSnapshot.activeFocusTargets);
+		expect(result.activePerspectiveId).toBe("persp-architecture");
+		expect(result.viewportAnchor).toEqual(savedSnapshot.viewportAnchor);
+		expect(result.activeWaypointIndex).toBe(2);
+	});
+});
+
+describe("reconcileRouteEnd", () => {
+	it("clears route state and preserves domain/capability/perspective", () => {
+		const ctx = {
+			...baseCtx(),
+			activeDomainId: "dom-payments",
+			activeCapabilityId: "cap-payment-processing",
+			activePerspectiveId: "persp-architecture",
+			activeStoryRouteId: "sr-payment-flow",
+			activeWaypointIndex: 4,
+			routeState: "active" as const,
+			activeFocusTargets: [{ type: "node" as const, targetId: "n-core-ledger" }],
+		};
+		const result = reconcileRouteEnd(ctx);
+		expect(result.activeStoryRouteId).toBeNull();
+		expect(result.activeWaypointIndex).toBeNull();
+		expect(result.routeState).toBe("inactive");
+		expect(result.activeFocusTargets).toEqual([]);
+		expect(result.activeDomainId).toBe("dom-payments");
+		expect(result.activeCapabilityId).toBe("cap-payment-processing");
+		expect(result.activePerspectiveId).toBe("persp-architecture");
 	});
 });

@@ -21,3 +21,9 @@ export type {
 	IndexGenerationMachineContext,
 	IndexGenerationMachineEvent,
 } from "./index-generation.machine.js";
+
+export { storyRouteMachine } from "./story-route.machine.js";
+export type {
+	StoryRouteMachineContext,
+	StoryRouteMachineEvent,
+} from "./story-route.machine.js";

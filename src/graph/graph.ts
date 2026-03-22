@@ -3,7 +3,10 @@ import type { Edge } from "../entities/edge.js";
 import type { Journey } from "../entities/journey.js";
 import type { Layer } from "../entities/layer.js";
 import type { Node } from "../entities/node.js";
+import type { Process } from "../entities/process.js";
+import type { ProviderAssociation } from "../entities/provider-association.js";
 import type { Step } from "../entities/step.js";
+import type { ValueStream } from "../entities/value-stream.js";
 
 export interface TerrainGraph {
 	readonly nodes: ReadonlyMap<string, Node>;
@@ -134,4 +137,41 @@ export function getPathNodes(graph: TerrainGraph, journey: Journey, steps: Step[
 	}
 
 	return result;
+}
+
+export function getProvidersForCapability(
+	capabilityId: string,
+	associations: ProviderAssociation[],
+): string[] {
+	return [
+		...new Set(
+			associations
+				.filter((a) => a.targetType === "capability" && a.targetId === capabilityId)
+				.map((a) => a.providerId),
+		),
+	];
+}
+
+export function getProvidersForValueStream(
+	valueStreamId: string,
+	associations: ProviderAssociation[],
+): string[] {
+	return [
+		...new Set(
+			associations
+				.filter((a) => a.targetType === "value_stream" && a.targetId === valueStreamId)
+				.map((a) => a.providerId),
+		),
+	];
+}
+
+export function getValueStreamsForDomain(
+	domainId: string,
+	valueStreams: ValueStream[],
+): ValueStream[] {
+	return valueStreams.filter((vs) => vs.domainId === domainId);
+}
+
+export function getProcessesForCapability(capabilityId: string, processes: Process[]): Process[] {
+	return processes.filter((p) => p.capabilityIds.includes(capabilityId));
 }

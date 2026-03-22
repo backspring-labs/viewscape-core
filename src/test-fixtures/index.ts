@@ -10,6 +10,13 @@ export {
 	scenes,
 	annotations,
 	evidenceRefs,
+	providers,
+	providerAssociations,
+	valueStreams,
+	processes,
+	processStages,
+	storyRoutes,
+	storyWaypoints,
 } from "./seed-banking.js";
 
 export { MockContentRepoAdapter } from "./mock-content-adapter.js";
@@ -28,4 +35,11 @@ export {
 	makeScene,
 	makeAnnotation,
 	makeEvidenceRef,
+	makeProvider,
+	makeProviderAssociation,
+	makeValueStream,
+	makeProcess,
+	makeProcessStage,
+	makeStoryRoute,
+	makeStoryWaypoint,
 } from "./helpers.js";

@@ -7,6 +7,8 @@ const ViewportAnchorSchema = z.object({
 	zoom: z.number().positive(),
 });
 
+export const RouteStateSchema = z.enum(["inactive", "active", "paused"]);
+
 export const NavigationContextSchema = z.object({
 	activeDomainId: z.string().nullable(),
 	activeCapabilityId: z.string().nullable(),
@@ -19,6 +21,12 @@ export const NavigationContextSchema = z.object({
 	viewportAnchor: ViewportAnchorSchema,
 	activeSceneId: z.string().nullable(),
 	mode: z.enum(["viewscape", "guiderail"]),
+	// 0.2.0 additions — all with defaults for backward compatibility
+	activeValueStreamId: z.string().nullable().default(null),
+	activeProcessId: z.string().nullable().default(null),
+	activeStoryRouteId: z.string().nullable().default(null),
+	activeWaypointIndex: z.number().int().nullable().default(null),
+	routeState: RouteStateSchema.default("inactive"),
 });
 
 export type NavigationContext = z.infer<typeof NavigationContextSchema>;
@@ -36,5 +44,10 @@ export function createInitialNavigationContext(perspectiveId: string): Navigatio
 		viewportAnchor: { x: 0, y: 0, zoom: 1 },
 		activeSceneId: null,
 		mode: "viewscape",
+		activeValueStreamId: null,
+		activeProcessId: null,
+		activeStoryRouteId: null,
+		activeWaypointIndex: null,
+		routeState: "inactive",
 	};
 }

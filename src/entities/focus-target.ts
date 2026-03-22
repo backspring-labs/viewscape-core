@@ -7,6 +7,9 @@ export const FocusTargetTypeSchema = z.enum([
 	"annotation",
 	"artifact_anchor",
 	"sequence_element",
+	"provider",
+	"process_stage",
+	"value_stream",
 ]);
 
 export const FocusTargetSchema = z.object({

@@ -9,6 +9,10 @@ export {
 	getCapabilitiesForDomain,
 	getNodesForLayer,
 	getPathNodes,
+	getProvidersForCapability,
+	getProvidersForValueStream,
+	getValueStreamsForDomain,
+	getProcessesForCapability,
 } from "./graph.js";
 export type { TerrainGraph } from "./graph.js";
 

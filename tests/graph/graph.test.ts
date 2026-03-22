@@ -10,6 +10,10 @@ import {
 	getNodesForCapability,
 	getNodesForLayer,
 	getPathNodes,
+	getProcessesForCapability,
+	getProvidersForCapability,
+	getProvidersForValueStream,
+	getValueStreamsForDomain,
 } from "../../src/graph/index.js";
 import { bfsTraverse } from "../../src/graph/index.js";
 import { filterGraph, filterNodesByTags, filterNodesByType } from "../../src/graph/index.js";
@@ -19,7 +23,10 @@ import {
 	journeys,
 	layers,
 	nodes,
+	processes,
+	providerAssociations,
 	steps,
+	valueStreams,
 } from "../../src/test-fixtures/index.js";
 
 const graph = createGraph(nodes, edges);
@@ -210,5 +217,74 @@ describe("filterNodesByType", () => {
 		const result = filterNodesByType(graph, ["actor"]);
 		expect(result.length).toBe(1);
 		expect(result[0]?.id).toBe("n-customer");
+	});
+});
+
+describe("getProvidersForCapability", () => {
+	it("returns providers for payment processing", () => {
+		const result = getProvidersForCapability("cap-payment-processing", providerAssociations);
+		expect(result).toContain("prov-visa");
+		expect(result).toContain("prov-mastercard");
+	});
+
+	it("returns providers for money movement", () => {
+		const result = getProvidersForCapability("cap-money-movement", providerAssociations);
+		expect(result).toContain("prov-rtp");
+		expect(result).toContain("prov-fednow");
+	});
+
+	it("returns empty for capability with no providers", () => {
+		const result = getProvidersForCapability("cap-account-servicing", providerAssociations);
+		expect(result).toEqual([]);
+	});
+
+	it("deduplicates provider IDs", () => {
+		const result = getProvidersForCapability("cap-payment-processing", providerAssociations);
+		expect(new Set(result).size).toBe(result.length);
+	});
+});
+
+describe("getProvidersForValueStream", () => {
+	it("returns providers for retail payments value stream", () => {
+		const result = getProvidersForValueStream("vs-retail-payments", providerAssociations);
+		expect(result).toContain("prov-rtp");
+		expect(result).toContain("prov-fednow");
+	});
+
+	it("returns empty for unknown value stream", () => {
+		const result = getProvidersForValueStream("vs-nonexistent", providerAssociations);
+		expect(result).toEqual([]);
+	});
+});
+
+describe("getValueStreamsForDomain", () => {
+	it("returns value streams for payments domain", () => {
+		const result = getValueStreamsForDomain("dom-payments", valueStreams);
+		expect(result.length).toBe(1);
+		expect(result[0]?.label).toBe("Retail Payments");
+	});
+
+	it("returns value streams for accounts domain", () => {
+		const result = getValueStreamsForDomain("dom-accounts", valueStreams);
+		expect(result.length).toBe(1);
+		expect(result[0]?.label).toBe("Account Origination");
+	});
+
+	it("returns empty for domain with no value streams", () => {
+		const result = getValueStreamsForDomain("dom-customer", valueStreams);
+		expect(result).toEqual([]);
+	});
+});
+
+describe("getProcessesForCapability", () => {
+	it("returns processes for payment processing capability", () => {
+		const result = getProcessesForCapability("cap-payment-processing", processes);
+		expect(result.length).toBe(1);
+		expect(result[0]?.label).toBe("Payment Authorization");
+	});
+
+	it("returns empty for capability with no processes", () => {
+		const result = getProcessesForCapability("cap-auth", processes);
+		expect(result).toEqual([]);
 	});
 });

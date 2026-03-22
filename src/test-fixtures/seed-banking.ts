@@ -16,10 +16,24 @@ import { NodeSchema } from "../entities/node.js";
 import type { Node } from "../entities/node.js";
 import { PerspectiveSchema } from "../entities/perspective.js";
 import type { Perspective } from "../entities/perspective.js";
+import { ProcessStageSchema } from "../entities/process-stage.js";
+import type { ProcessStage } from "../entities/process-stage.js";
+import { ProcessSchema } from "../entities/process.js";
+import type { Process } from "../entities/process.js";
+import { ProviderAssociationSchema } from "../entities/provider-association.js";
+import type { ProviderAssociation } from "../entities/provider-association.js";
+import { ProviderSchema } from "../entities/provider.js";
+import type { Provider } from "../entities/provider.js";
 import { SceneSchema } from "../entities/scene.js";
 import type { Scene } from "../entities/scene.js";
 import { StepSchema } from "../entities/step.js";
 import type { Step } from "../entities/step.js";
+import { StoryRouteSchema } from "../entities/story-route.js";
+import type { StoryRoute } from "../entities/story-route.js";
+import { StoryWaypointSchema } from "../entities/story-waypoint.js";
+import type { StoryWaypoint } from "../entities/story-waypoint.js";
+import { ValueStreamSchema } from "../entities/value-stream.js";
+import type { ValueStream } from "../entities/value-stream.js";
 
 // --- Domains ---
 
@@ -618,3 +632,275 @@ export const evidenceRefs: EvidenceRef[] = [
 		relatedEntityIds: ["n-account-svc", "n-core-ledger", "cap-account-opening"],
 	},
 ].map((d) => EvidenceRefSchema.parse(d));
+
+// --- Providers (payments vertical slice) ---
+
+export const providers: Provider[] = [
+	{
+		id: "prov-visa",
+		label: "Visa",
+		description: "Global payment network and scheme operator",
+		category: "scheme",
+		tags: ["network", "cards", "global"],
+	},
+	{
+		id: "prov-mastercard",
+		label: "Mastercard",
+		description: "Global payment network and scheme operator",
+		category: "scheme",
+		tags: ["network", "cards", "global"],
+	},
+	{
+		id: "prov-rtp",
+		label: "RTP",
+		description: "Real-time payments network operated by The Clearing House",
+		category: "rail",
+		tags: ["real-time", "account-to-account"],
+	},
+	{
+		id: "prov-fednow",
+		label: "FedNow",
+		description: "Federal Reserve instant payment service",
+		category: "rail",
+		tags: ["real-time", "account-to-account", "federal"],
+	},
+	{
+		id: "prov-apple-pay",
+		label: "Apple Pay",
+		description: "Mobile wallet and payment interface",
+		category: "wallet",
+		tags: ["mobile", "wallet", "tokenization"],
+	},
+].map((d) => ProviderSchema.parse(d));
+
+// --- Provider Associations ---
+
+export const providerAssociations: ProviderAssociation[] = [
+	{
+		id: "pa-visa-processing",
+		providerId: "prov-visa",
+		targetType: "capability",
+		targetId: "cap-payment-processing",
+		role: "scheme_operator",
+	},
+	{
+		id: "pa-mastercard-processing",
+		providerId: "prov-mastercard",
+		targetType: "capability",
+		targetId: "cap-payment-processing",
+		role: "scheme_operator",
+	},
+	{
+		id: "pa-rtp-movement",
+		providerId: "prov-rtp",
+		targetType: "capability",
+		targetId: "cap-money-movement",
+		role: "rail_provider",
+	},
+	{
+		id: "pa-fednow-movement",
+		providerId: "prov-fednow",
+		targetType: "capability",
+		targetId: "cap-money-movement",
+		role: "rail_provider",
+	},
+	{
+		id: "pa-apple-pay-app",
+		providerId: "prov-apple-pay",
+		targetType: "node",
+		targetId: "n-mobile-app",
+		role: "interface_provider",
+	},
+	{
+		id: "pa-visa-rail",
+		providerId: "prov-visa",
+		targetType: "node",
+		targetId: "n-payment-rail",
+		role: "scheme_operator",
+	},
+	{
+		id: "pa-rtp-vs",
+		providerId: "prov-rtp",
+		targetType: "value_stream",
+		targetId: "vs-retail-payments",
+		role: "rail_provider",
+	},
+	{
+		id: "pa-fednow-vs",
+		providerId: "prov-fednow",
+		targetType: "value_stream",
+		targetId: "vs-retail-payments",
+		role: "rail_provider",
+	},
+].map((d) => ProviderAssociationSchema.parse(d));
+
+// --- Value Streams ---
+
+export const valueStreams: ValueStream[] = [
+	{
+		id: "vs-retail-payments",
+		domainId: "dom-payments",
+		label: "Retail Payments",
+		description: "End-to-end value stream for retail payment processing and money movement",
+		capabilityIds: ["cap-money-movement", "cap-payment-processing"],
+		journeyIds: [],
+		tags: ["payments", "retail"],
+	},
+	{
+		id: "vs-account-origination",
+		domainId: "dom-accounts",
+		label: "Account Origination",
+		description: "End-to-end value stream for new account creation and onboarding",
+		capabilityIds: ["cap-account-opening", "cap-onboarding"],
+		journeyIds: ["j-open-savings"],
+		tags: ["accounts", "origination"],
+	},
+].map((d) => ValueStreamSchema.parse(d));
+
+// --- Process Stages ---
+
+export const processStages: ProcessStage[] = [
+	{
+		id: "ps-1",
+		processId: "proc-payment-auth",
+		sequenceNumber: 0,
+		label: "Transaction Receipt",
+		description: "Receive and validate the payment request from the channel",
+		nodeIds: ["n-api-gateway", "n-payment-orch"],
+		edgeIds: ["e-gw-payment"],
+	},
+	{
+		id: "ps-2",
+		processId: "proc-payment-auth",
+		sequenceNumber: 1,
+		label: "Risk Screening",
+		description: "Evaluate fraud signals, velocity checks, and policy compliance",
+		nodeIds: ["n-risk-svc"],
+		edgeIds: ["e-risk-payment"],
+		controlPoints: ["fraud-check", "velocity-limit", "policy-compliance"],
+	},
+	{
+		id: "ps-3",
+		processId: "proc-payment-auth",
+		sequenceNumber: 2,
+		label: "Network Authorization",
+		description: "Route to the appropriate payment network for authorization",
+		nodeIds: ["n-payment-orch", "n-payment-rail"],
+		edgeIds: ["e-payment-rail"],
+	},
+	{
+		id: "ps-4",
+		processId: "proc-payment-auth",
+		sequenceNumber: 3,
+		label: "Posting",
+		description: "Record the authorized transaction in the core ledger",
+		nodeIds: ["n-core-ledger"],
+		edgeIds: ["e-payment-ledger"],
+		controlPoints: ["double-entry", "balance-update"],
+	},
+].map((d) => ProcessStageSchema.parse(d));
+
+// --- Processes ---
+
+export const processes: Process[] = [
+	{
+		id: "proc-payment-auth",
+		label: "Payment Authorization",
+		description: "Operational process for authorizing and posting a retail payment",
+		capabilityIds: ["cap-payment-processing"],
+		valueStreamId: "vs-retail-payments",
+		stageIds: ["ps-1", "ps-2", "ps-3", "ps-4"],
+		tags: ["payments", "authorization"],
+	},
+].map((d) => ProcessSchema.parse(d));
+
+// --- Story Waypoints ---
+
+export const storyWaypoints: StoryWaypoint[] = [
+	{
+		id: "sw-1",
+		storyRouteId: "sr-payment-flow",
+		sequenceNumber: 0,
+		title: "The Customer Initiates",
+		keyMessage: "Every payment begins with a customer action in a channel",
+		whyItMatters: "The channel determines which payment interfaces and wallets are available",
+		focusTargets: [
+			{ type: "node", targetId: "n-customer" },
+			{ type: "node", targetId: "n-mobile-app" },
+		],
+		perspectiveId: "persp-overview",
+	},
+	{
+		id: "sw-2",
+		storyRouteId: "sr-payment-flow",
+		sequenceNumber: 1,
+		title: "The Gateway Routes",
+		keyMessage: "The API gateway identifies the payment context and routes to orchestration",
+		focusTargets: [
+			{ type: "node", targetId: "n-api-gateway" },
+			{ type: "node", targetId: "n-payment-orch" },
+			{ type: "edge", targetId: "e-gw-payment" },
+		],
+		perspectiveId: "persp-architecture",
+	},
+	{
+		id: "sw-3",
+		storyRouteId: "sr-payment-flow",
+		sequenceNumber: 2,
+		title: "Risk and Decisioning",
+		keyMessage: "Before any money moves, fraud and policy checks determine if the payment proceeds",
+		whyItMatters: "This is where the bank retains critical control over the transaction",
+		focusTargets: [
+			{ type: "node", targetId: "n-risk-svc" },
+			{ type: "edge", targetId: "e-risk-payment" },
+			{ type: "process_stage", targetId: "ps-2" },
+		],
+	},
+	{
+		id: "sw-4",
+		storyRouteId: "sr-payment-flow",
+		sequenceNumber: 3,
+		title: "The Network Path",
+		keyMessage: "The payment orchestrator selects the appropriate network or rail for execution",
+		whyItMatters:
+			"This is where schemes like Visa/Mastercard or rails like RTP/FedNow enter the flow",
+		focusTargets: [
+			{ type: "node", targetId: "n-payment-orch" },
+			{ type: "node", targetId: "n-payment-rail" },
+			{ type: "edge", targetId: "e-payment-rail" },
+			{ type: "provider", targetId: "prov-visa" },
+		],
+		perspectiveId: "persp-provider",
+	},
+	{
+		id: "sw-5",
+		storyRouteId: "sr-payment-flow",
+		sequenceNumber: 4,
+		title: "The Core Records",
+		keyMessage:
+			"The core ledger is the system of record — this is where the transaction becomes authoritative",
+		whyItMatters:
+			"Regardless of which network or rail was used, the core ledger maintains the bank's truth",
+		focusTargets: [
+			{ type: "node", targetId: "n-core-ledger" },
+			{ type: "edge", targetId: "e-payment-ledger" },
+			{ type: "process_stage", targetId: "ps-4" },
+		],
+	},
+].map((d) => StoryWaypointSchema.parse(d));
+
+// --- Story Routes ---
+
+export const storyRoutes: StoryRoute[] = [
+	{
+		id: "sr-payment-flow",
+		title: "How a Payment Flows",
+		destinationObjective:
+			"Understand how a payment moves through the modern banking stack from customer initiation to core recording",
+		audienceTag: "architecture",
+		overview:
+			"This route walks through a retail payment from the customer's device through orchestration, risk, network selection, and core posting.",
+		waypointIds: ["sw-1", "sw-2", "sw-3", "sw-4", "sw-5"],
+		tags: ["payments", "teaching", "architecture"],
+	},
+].map((d) => StoryRouteSchema.parse(d));

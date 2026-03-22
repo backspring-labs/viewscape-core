@@ -2,7 +2,20 @@ import { describe, expect, it } from "vitest";
 import { createActor } from "xstate";
 import { contextMachine } from "../../src/context/context.machine.js";
 import { createGraph } from "../../src/graph/graph.js";
-import { capabilities, edges, journeys, nodes, steps } from "../../src/test-fixtures/index.js";
+import {
+	capabilities,
+	edges,
+	journeys,
+	nodes,
+	processStages,
+	processes,
+	providerAssociations,
+	providers,
+	steps,
+	storyRoutes,
+	storyWaypoints,
+	valueStreams,
+} from "../../src/test-fixtures/index.js";
 
 const graph = createGraph(nodes, edges);
 
@@ -111,5 +124,131 @@ describe("Context Machine", () => {
 		expect(nav.activeJourneyId).toBe("j-open-savings");
 		expect(nav.activeStepIndex).toBe(0);
 		expect(nav.activeSceneId).toBe("sc-1");
+	});
+});
+
+// --- 0.2.0 Context Machine tests ---
+
+function createFullCtx() {
+	const actor = createActor(contextMachine).start();
+	actor.send({
+		type: "INITIALIZE",
+		graph,
+		journeys,
+		steps,
+		capabilities,
+		providers,
+		providerAssociations,
+		valueStreams,
+		processes,
+		processStages,
+		storyRoutes,
+		storyWaypoints,
+	});
+	return actor;
+}
+
+describe("Context Machine 0.2.0", () => {
+	it("INITIALIZE without new fields still works (backward compat)", () => {
+		const actor = createCtx();
+		expect(actor.getSnapshot().value).toBe("ready");
+		expect(actor.getSnapshot().context.providers).toEqual([]);
+		expect(actor.getSnapshot().context.storyRoutes).toEqual([]);
+	});
+
+	it("INITIALIZE with new fields stores them", () => {
+		const actor = createFullCtx();
+		expect(actor.getSnapshot().context.providers.length).toBe(5);
+		expect(actor.getSnapshot().context.storyRoutes.length).toBe(1);
+		expect(actor.getSnapshot().context.storyWaypoints.length).toBe(5);
+		expect(actor.getSnapshot().context.valueStreams.length).toBe(2);
+		expect(actor.getSnapshot().context.processes.length).toBe(1);
+		expect(actor.getSnapshot().context.processStages.length).toBe(4);
+	});
+
+	it("SELECT_VALUE_STREAM updates nav", () => {
+		const actor = createFullCtx();
+		actor.send({ type: "SELECT_VALUE_STREAM", valueStreamId: "vs-retail-payments" });
+		expect(actor.getSnapshot().context.nav.activeValueStreamId).toBe("vs-retail-payments");
+	});
+
+	it("CLEAR_VALUE_STREAM clears value stream and process", () => {
+		const actor = createFullCtx();
+		actor.send({ type: "SELECT_VALUE_STREAM", valueStreamId: "vs-retail-payments" });
+		actor.send({ type: "SELECT_PROCESS", processId: "proc-payment-auth" });
+		actor.send({ type: "CLEAR_VALUE_STREAM" });
+		const nav = actor.getSnapshot().context.nav;
+		expect(nav.activeValueStreamId).toBeNull();
+		expect(nav.activeProcessId).toBeNull();
+	});
+
+	it("SELECT_PROCESS updates nav", () => {
+		const actor = createFullCtx();
+		actor.send({ type: "SELECT_PROCESS", processId: "proc-payment-auth" });
+		const nav = actor.getSnapshot().context.nav;
+		expect(nav.activeProcessId).toBe("proc-payment-auth");
+		expect(nav.activeFocusTargets.length).toBeGreaterThan(0);
+	});
+
+	it("CLEAR_PROCESS clears process", () => {
+		const actor = createFullCtx();
+		actor.send({ type: "SELECT_PROCESS", processId: "proc-payment-auth" });
+		actor.send({ type: "CLEAR_PROCESS" });
+		expect(actor.getSnapshot().context.nav.activeProcessId).toBeNull();
+	});
+
+	it("START_ROUTE sets route and first waypoint", () => {
+		const actor = createFullCtx();
+		actor.send({ type: "START_ROUTE", storyRouteId: "sr-payment-flow" });
+		const nav = actor.getSnapshot().context.nav;
+		expect(nav.activeStoryRouteId).toBe("sr-payment-flow");
+		expect(nav.activeWaypointIndex).toBe(0);
+		expect(nav.routeState).toBe("active");
+		expect(nav.activeFocusTargets.length).toBeGreaterThan(0);
+	});
+
+	it("START_ROUTE rejects invalid route", () => {
+		const actor = createFullCtx();
+		actor.send({ type: "START_ROUTE", storyRouteId: "nonexistent" });
+		expect(actor.getSnapshot().context.nav.activeStoryRouteId).toBeNull();
+	});
+
+	it("NEXT_WAYPOINT advances", () => {
+		const actor = createFullCtx();
+		actor.send({ type: "START_ROUTE", storyRouteId: "sr-payment-flow" });
+		actor.send({ type: "NEXT_WAYPOINT" });
+		expect(actor.getSnapshot().context.nav.activeWaypointIndex).toBe(1);
+	});
+
+	it("PAUSE_ROUTE and RESUME_ROUTE cycle", () => {
+		const actor = createFullCtx();
+		actor.send({ type: "START_ROUTE", storyRouteId: "sr-payment-flow" });
+		actor.send({ type: "NEXT_WAYPOINT" });
+
+		// Pause
+		actor.send({ type: "PAUSE_ROUTE" });
+		expect(actor.getSnapshot().context.nav.routeState).toBe("paused");
+		expect(actor.getSnapshot().context.pausedRouteSnapshot).not.toBeNull();
+
+		// Explore during pause
+		actor.send({ type: "SELECT_NODE", nodeId: "n-customer" });
+
+		// Resume
+		actor.send({ type: "RESUME_ROUTE" });
+		const nav = actor.getSnapshot().context.nav;
+		expect(nav.routeState).toBe("active");
+		expect(nav.activeWaypointIndex).toBe(1);
+		expect(actor.getSnapshot().context.pausedRouteSnapshot).toBeNull();
+	});
+
+	it("END_ROUTE clears route state", () => {
+		const actor = createFullCtx();
+		actor.send({ type: "START_ROUTE", storyRouteId: "sr-payment-flow" });
+		actor.send({ type: "SELECT_DOMAIN", domainId: "dom-payments" });
+		actor.send({ type: "END_ROUTE" });
+		const nav = actor.getSnapshot().context.nav;
+		expect(nav.activeStoryRouteId).toBeNull();
+		expect(nav.routeState).toBe("inactive");
+		expect(nav.activeDomainId).toBe("dom-payments");
 	});
 });
